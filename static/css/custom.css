@@ -1,0 +1,466 @@
+/* custom.css - Кыргызский стиль для интернет-магазина */
+/* Цвета: красный (#CC0000) и желтый (#FFCC00) - национальные цвета Кыргызстана */
+
+:root {
+  /* Кыргызская цветовая палитра */
+  --primary-color: #CC0000;      /* Красный - национальный цвет */
+  --primary-light: #FF6666;      /* Светло-красный */
+  --primary-dark: #990000;       /* Темно-красный */
+  --secondary-color: #FFCC00;    /* Золотой/желтый */
+  --secondary-light: #FFE066;    /* Светло-золотой */
+  --secondary-dark: #E6B800;     /* Темно-золотой */
+  --accent-color: #0088CC;       /* Голубой - цвет неба и озера Иссык-Куль */
+
+  /* Фон и текст */
+  --bg-color: #FFFFFF;           /* Белый фон */
+  --bg-light: #FFF9F0;          /* Светло-бежевый */
+  --bg-secondary: #F8F5F0;      /* Вторичный фон с оттенком орнамента */
+  --text-color: #2D3748;        /* Темно-серый текст */
+  --text-light: #718096;        /* Светло-серый текст */
+  --text-on-primary: #FFFFFF;   /* Текст на красном фоне */
+
+  /* Границы и тени */
+  --border-color: #E2DED8;      /* Бежево-серая граница */
+  --border-radius: 12px;        /* Скругление углов */
+  --border-radius-sm: 8px;      /* Маленькое скругление */
+  --card-shadow: 0 4px 12px rgba(204, 0, 0, 0.08); /* Легкая тень с красным оттенком */
+  --card-shadow-hover: 0 8px 24px rgba(204, 0, 0, 0.12);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+
+  /* Анимации */
+  --transition: 0.3s ease;
+  --transition-fast: 0.2s ease;
+
+  /* Размеры */
+  --logo-height: 60px;          /* Фиксированная высота логотипа */
+  --logo-max-width: 200px;      /* Максимальная ширина логотипа */
+  --header-height: 80px;
+  --max-width: 1200px;
+}
+
+/* Базовые стили */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', 'Arial', sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  line-height: 1.6;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Декоративный фон с кыргызским орнаментом */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    radial-gradient(circle at 20% 80%, rgba(255, 204, 0, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(204, 0, 0, 0.03) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 20px;
+  width: 100%;
+}
+
+/* Шапка */
+.site-header {
+  background-color: var(--bg-color);
+  border-bottom: 2px solid var(--border-color);
+  height: var(--header-height);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow-sm);
+}
+
+.header-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 100%;
+}
+
+/* Бренд и логотип */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  text-decoration: none;
+  color: inherit;
+  transition: transform var(--transition);
+}
+
+.brand:hover {
+  transform: translateY(-2px);
+}
+
+.brand-logo {
+  height: var(--logo-height);
+  width: auto;
+  max-width: var(--logo-max-width);
+  object-fit: contain;
+  border-radius: 8px;
+  padding: 5px;
+  background: linear-gradient(135deg, var(--secondary-light), var(--bg-light));
+  box-shadow: 0 2px 8px rgba(204, 0, 0, 0.1);
+}
+
+.brand-name {
+  font-size: 1.8rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  letter-spacing: -0.5px;
+  position: relative;
+}
+
+.brand-name::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+  border-radius: 2px;
+  transform: scaleX(0);
+  transition: transform var(--transition);
+}
+
+.brand:hover .brand-name::after {
+  transform: scaleX(1);
+}
+
+/* Навигация */
+.main-nav {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
+
+.nav-link {
+  color: var(--text-color);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1rem;
+  padding: 8px 16px;
+  border-radius: var(--border-radius-sm);
+  transition: all var(--transition);
+  position: relative;
+}
+
+.nav-link:hover {
+  color: var(--primary-color);
+  background-color: rgba(204, 0, 0, 0.05);
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+  border-radius: 1px;
+  transition: width var(--transition);
+}
+
+.nav-link:hover::after {
+  width: 80%;
+}
+
+/* Основной контент */
+.site-main {
+  flex: 1;
+  padding: 40px 0;
+  background-color: var(--bg-light);
+}
+
+.page-section {
+  padding: 40px 0;
+}
+
+.page-section .container {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Подвал */
+.site-footer {
+  background: linear-gradient(135deg, var(--primary-dark), var(--primary-color));
+  color: white;
+  padding: 40px 0 20px;
+  margin-top: auto;
+  position: relative;
+  overflow: hidden;
+}
+
+.site-footer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 10px,
+      rgba(255, 255, 255, 0.05) 10px,
+      rgba(255, 255, 255, 0.05) 20px
+    );
+  pointer-events: none;
+}
+
+.footer-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 40px;
+  position: relative;
+  z-index: 1;
+}
+
+.footer-brand {
+  flex: 1;
+  min-width: 200px;
+}
+
+.footer-brand strong {
+  font-size: 1.5rem;
+  font-weight: 700;
+  display: block;
+  margin-bottom: 10px;
+  color: var(--secondary-light);
+}
+
+.footer-brand p {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+}
+
+.footer-contacts {
+  flex: 1;
+  min-width: 200px;
+  text-align: right;
+}
+
+.footer-contacts p {
+  margin-bottom: 10px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1rem;
+}
+
+/* Декоративный элемент в кыргызском стиле */
+.kyrgyz-pattern {
+  position: relative;
+  margin: 30px 0;
+  text-align: center;
+}
+
+.kyrgyz-pattern::before,
+.kyrgyz-pattern::after {
+  content: '❖';
+  color: var(--primary-color);
+  font-size: 24px;
+  margin: 0 20px;
+}
+
+/* Утилитарные классы */
+.text-center {
+  text-align: center;
+}
+
+.mt-20 { margin-top: 20px; }
+.mt-30 { margin-top: 30px; }
+.mt-40 { margin-top: 40px; }
+
+.mb-20 { margin-bottom: 20px; }
+.mb-30 { margin-bottom: 30px; }
+.mb-40 { margin-bottom: 40px; }
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  :root {
+    --logo-height: 50px;
+    --logo-max-width: 150px;
+    --header-height: 70px;
+  }
+
+  .header-inner {
+    flex-direction: column;
+    justify-content: center;
+    gap: 15px;
+    padding: 10px 0;
+  }
+
+  .brand-name {
+    font-size: 1.5rem;
+  }
+
+  .main-nav {
+    gap: 15px;
+  }
+
+  .nav-link {
+    padding: 6px 12px;
+    font-size: 0.9rem;
+  }
+
+  .footer-inner {
+    flex-direction: column;
+    text-align: center;
+    gap: 30px;
+  }
+
+  .footer-contacts {
+    text-align: center;
+  }
+
+  .container {
+    padding: 0 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --logo-height: 45px;
+    --logo-max-width: 130px;
+  }
+
+  .brand {
+    gap: 10px;
+  }
+
+  .brand-name {
+    font-size: 1.3rem;
+  }
+
+  .main-nav {
+    gap: 10px;
+  }
+
+  .nav-link {
+    padding: 5px 10px;
+    font-size: 0.85rem;
+  }
+
+  .site-main {
+    padding: 30px 0;
+  }
+
+  .page-section {
+    padding: 30px 0;
+  }
+}
+
+/* ===== Категории ===== */
+
+.categories-grid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 2.5rem;
+  margin-top: 3rem;
+}
+
+@media (min-width: 640px) {
+  .categories-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .categories-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.category-card {
+  display: block;
+  text-decoration: none;
+  background: var(--bg-secondary);
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  box-shadow: var(--card-shadow);
+  transition: all var(--transition-medium);
+  position: relative;
+}
+
+.category-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--card-shadow-hover);
+}
+
+.category-image {
+  height: 260px;
+  overflow: hidden;
+}
+
+.category-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--transition-slow);
+}
+
+.category-card:hover img {
+  transform: scale(1.06);
+}
+
+.category-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-align: center;
+  padding: 1rem;
+}
+
+.category-title {
+  padding: 1.25rem;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-color);
+  text-align: center;
+}

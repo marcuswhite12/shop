@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ category.name }} - {{ block.super }}{% endblock %}
+
+{% block content %}
+    <h1 class="text-5xl font-bold text-center mb-16 text-primary">{{ category.name }}</h1>
+
+    {% if products %}
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {% for product in products %}
+                <a href="{{ product.get_absolute_url }}" class="block bg-white rounded-xl shadow-lg hover:shadow-2xl transition transform hover:-translate-y-4 overflow-hidden">
+                    {% with product.images.first as main_image %}
+                        {% if main_image %}
+                            <img src="{{ main_image.image.url }}" alt="{{ product.name }}" class="w-full h-80 object-cover">
+                        {% else %}
+                            <div class="bg-gray-200 border-2 border-dashed w-full h-80 flex items-center justify-center">
+                                <span class="text-gray-500 text-xl">Нет фото</span>
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+                    <div class="p-6 text-center">
+                        <h3 class="text-2xl font-semibold mb-4 line-clamp-2">{{ product.name }}</h3>
+                        <p class="text-4xl font-bold text-primary">{{ product.price }} {{ currency_symbol }}</p>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+
+        {% if is_paginated %}
+            <div class="mt-16 flex justify-center gap-6">
+                {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}" class="px-8 py-4 bg-primary text-white rounded-xl text-xl font-bold hover:bg-secondary transition">← Назад</a>
+                {% endif %}
+                <span class="px-8 py-4 text-xl">Страница {{ page_obj.number }} из {{ paginator.num_pages }}</span>
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}" class="px-8 py-4 bg-primary text-white rounded-xl text-xl font-bold hover:bg-secondary transition">Вперёд →</a>
+                {% endif %}
+            </div>
+        {% endif %}
+    {% else %}
+        <p class="text-center text-3xl text-gray-500">Товаров в этой категории пока нет</p>
+    {% endif %}
+{% endblock %}
