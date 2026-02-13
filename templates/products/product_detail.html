@@ -1,59 +1,44 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
-{% block title %}{{ product.name }} - {{ block.super }}{% endblock %}
+{% block title %}{{ product.name }} — {{ site_name }}{% endblock %}
 
 {% block content %}
-    <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12">
-        <!-- Галерея фото -->
-        <div>
-            {% with product.images.first as main_image %}
-                {% if main_image %}
-                    <img src="{{ main_image.image.url }}" alt="{{ product.name }}" class="w-full rounded-xl shadow-2xl mb-8">
-                {% endif %}
-            {% endwith %}
 
-            {% if product.images.count > 1 %}
-                <div class="grid grid-cols-4 gap-4">
-                    {% for image in product.images.all %}
-                        <img src="{{ image.image.url }}" alt="{{ product.name }}" class="rounded-lg shadow hover:opacity-80 transition cursor-pointer">
-                    {% endfor %}
-                </div>
-            {% endif %}
-        </div>
+<div class="product-detail">
 
-        <!-- Информация о товаре -->
-        <div>
-            <h1 class="text-5xl font-bold mb-6">{{ product.name }}</h1>
-            <p class="text-4xl font-bold text-primary mb-12">{{ product.price }} {{ currency_symbol }}</p>
-
-            <div class="prose max-w-none mb-12 text-lg">
-                {{ product.description|linebreaks }}
-            </div>
-
-            <!-- Форма добавления в корзину -->
-            <form action="{% url 'cart_add' product.id %}" method="post">
-                {% csrf_token %}
-                {% if product.variants.exists %}
-                    <div class="mb-8">
-                        <label class="block text-2xl font-semibold mb-4">Выберите вариант:</label>
-                        <select name="variant_id" class="border-2 border-gray-300 rounded-xl p-4 w-full text-lg" required>
-                            {% for variant in product.variants.all %}
-                                {% if variant.stock > 0 %}
-                                    <option value="{{ variant.id }}">
-                                        {% if variant.size %}{{ variant.size }} {% endif %}
-                                        {% if variant.color %}{{ variant.color }} {% endif %}
-                                        (на складе: {{ variant.stock }} шт.)
-                                    </option>
-                                {% endif %}
-                            {% endfor %}
-                        </select>
-                    </div>
-                {% endif %}
-
-                <button type="submit" class="bg-primary text-white px-12 py-6 rounded-xl text-3xl font-bold hover:bg-secondary transition shadow-2xl w-full">
-                    Добавить в корзину
-                </button>
-            </form>
-        </div>
+    <!-- Левая часть: изображение -->
+    <div class="product-detail-image">
+        {% with image=product.images.first %}
+          {% if image %}
+            <img src="{{ image.image.url }}">
+          {% else %}
+            Нет фото
+          {% endif %}
+        {% endwith %}
     </div>
+
+    <!-- Правая часть: информация -->
+    <div class="product-detail-info">
+        <h1 class="product-detail-title">{{ product.name }}</h1>
+
+        <div class="product-detail-price">
+            {{ product.price }} сом
+        </div>
+
+        {% if product.description %}
+        <div class="product-detail-description">
+            {{ product.description }}
+        </div>
+        {% endif %}
+
+        <div class="product-detail-actions">
+            <button class="btn btn-accent btn-full">
+                Добавить в корзину
+            </button>
+        </div>
+
+    </div>
+
+</div>
+
 {% endblock %}

@@ -27,6 +27,7 @@ class Product(models.Model):
     is_active = models.BooleanField('Активен', default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+
     class Meta:
         verbose_name = 'Товар'
         verbose_name_plural = 'Товары'
