@@ -6,7 +6,6 @@
 <h1 class="page-title text-center">Выберите категорию</h1>
 
 <div class="categories-grid">
-
     {% for category in categories %}
     <a href="{{ category.get_absolute_url }}" class="category-card">
 
@@ -26,6 +25,6 @@
 
     </a>
     {% endfor %}
-
 </div>
+
 {% endblock %}

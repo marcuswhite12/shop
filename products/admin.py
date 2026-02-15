@@ -5,9 +5,20 @@ from .models import Category, Product, ProductImage, Color, Size, Variant
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ['name']
+    list_display = ['name', 'image_preview']
     search_fields = ['name']
     prepopulated_fields = {'slug': ('name',)}
+
+    def image_preview(self, obj):
+        if obj.image:
+            return format_html(
+                '<img src="{}" style="height:60px; border-radius:8px;" />',
+                obj.image.url
+            )
+        return "(Нет фото)"
+
+    image_preview.short_description = 'Фото'
+
 
 
 class ProductImageInline(admin.TabularInline):
@@ -26,7 +37,7 @@ class ProductImageInline(admin.TabularInline):
 class VariantInline(admin.TabularInline):
     model = Variant
     extra = 1
-    fields = ['color', 'size', 'stock', 'additional_price']
+    fields = ['color', 'size', 'stock']
 
 
 @admin.register(Product)

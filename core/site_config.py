@@ -1,13 +1,13 @@
 # core/site_config.py
 # Все настройки магазина в одном месте — меняй здесь под каждого клиента
 
-SITE_NAME = "Aikol Art"  # Название в шапке, title и т.д.
+SITE_NAME = "Akbars"  # Название в шапке, title и т.д.
 SITE_DESCRIPTION = "Лучшая этно одежда по доступным ценам в Кыргызстане"  # Для SEO и футера
 
 # Логотип — положи файл в static/images/logo.png (или logo.jpg)
 LOGO_PATH = "images/logo.png"  # Путь относительно static (замени файл под клиента)
 
-PRIMARY_COLOR = "#3B82F6"   # Основной цвет (hex для Tailwind или CSS)
+PRIMARY_COLOR = "#00B7EB"   # Основной цвет (hex для Tailwind или CSS)
 SECONDARY_COLOR = "#1E40AF" # Вспомогательный цвет
 
 EMAIL = "info@shop.kg"      # Для контактов и уведомлений

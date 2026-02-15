@@ -30,6 +30,17 @@
         <nav class="main-nav">
             <a href="{% url 'home' %}" class="nav-link">Главная</a>
             <!-- cart позже -->
+            <a href="{% url 'cart_detail' %}" class="nav-cart-link">
+                Корзина
+                <span class="cart-count">
+                    {% if request.session.cart %}
+                        {{ request.session.cart|length }}
+                    {% else %}
+                        0
+                    {% endif %}
+                </span>
+            </a>
+
         </nav>
 
     </div>

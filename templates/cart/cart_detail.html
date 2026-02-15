@@ -1,10 +1,180 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends 'base.html' %}
 
-</body>
-</html>
+{% block title %}Корзина — {{ site_name }}{% endblock %}
+
+{% block content %}
+
+<section class="cart-section">
+    <div class="container">
+
+        <h1 class="page-title text-center">Корзина</h1>
+
+        {% if cart_items %}
+
+        <div class="cart-table-wrapper">
+
+            <table class="cart-table">
+
+                <thead>
+                    <tr>
+                        <th>Товар</th>
+                        <th>Цена</th>
+                        <th>Количество</th>
+                        <th>Сумма</th>
+                        <th></th>
+                    </tr>
+                </thead>
+
+                <div class="cart-actions">
+                    <form action="{% url 'cart_clear' %}" method="post">
+                        {% csrf_token %}
+                        <button class="cart-clear-btn">Очистить корзину</button>
+                    </form>
+                </div>
+
+
+
+                <tbody>
+                    {% for item in cart_items %}
+                    <tr>
+
+                        <td class="cart-product">
+                            {% if item.main_image %}
+                                <img src="{{ item.main_image }}" class="cart-product-image">
+                            {% endif %}
+                            <span class="cart-product-name">
+                                {{ item.display_name }}
+                            </span>
+                        </td>
+
+                        <td class="cart-price">
+                            {{ item.price }} {{ currency_symbol }}
+                        </td>
+
+                        <td class="cart-quantity">
+                            <form action="{% url 'cart_update' %}" method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="key" value="{{ item.key }}">
+
+                                <div class="cart-qty-wrapper"
+                                     data-stock="{{ item.stock }}">
+
+                                    <button type="button" class="cart-qty-btn minus">−</button>
+
+                                    <input type="text"
+                                           name="quantity"
+                                           value="{{ item.quantity }}"
+                                           class="cart-qty-input"
+                                           required>
+
+                                    <button type="button" class="cart-qty-btn plus">+</button>
+                                </div>
+
+                                <button type="submit" class="btn btn-small">OK</button>
+                            </form>
+                        </td>
+
+
+
+                        <td class="cart-subtotal">
+                            {{ item.subtotal }} {{ currency_symbol }}
+                        </td>
+
+                        <td class="cart-remove">
+                            <form action="{% url 'cart_remove' %}" method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="key" value="{{ item.key }}">
+                                <button type="submit" class="cart-remove-btn">
+                                    Удалить
+                                </button>
+                            </form>
+                        </td>
+
+                    </tr>
+                    {% endfor %}
+                </tbody>
+
+                <tfoot>
+                    <tr>
+                        <td colspan="3" class="cart-total-label">
+                            Итого:
+                        </td>
+                        <td class="cart-total-value">
+                            {{ total }} {{ currency_symbol }}
+                        </td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+
+            </table>
+
+        </div>
+
+        <div class="cart-checkout">
+            <a href="#" class="btn btn-accent">
+                Оформить заказ
+            </a>
+        </div>
+
+        {% else %}
+            <div class="cart-empty">
+                Корзина пуста
+            </div>
+        {% endif %}
+
+    </div>
+</section>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+    document.querySelectorAll('.cart-qty-wrapper').forEach(wrapper => {
+
+        const minus = wrapper.querySelector('.minus');
+        const plus = wrapper.querySelector('.plus');
+        const input = wrapper.querySelector('.cart-qty-input');
+
+        let max = parseInt(wrapper.dataset.stock);
+
+        if (isNaN(max) || max < 1) {
+            max = 1;
+        }
+
+        function update() {
+            let value = parseInt(input.value);
+
+            if (isNaN(value) || value < 1) {
+                value = 1;
+            }
+
+            if (value > max) {
+                value = max;
+            }
+
+            input.value = value;
+
+            minus.disabled = value <= 1;
+            plus.disabled = value >= max;
+        }
+
+        minus.addEventListener('click', function() {
+            input.value = (parseInt(input.value) || 1) - 1;
+            update();
+        });
+
+        plus.addEventListener('click', function() {
+            input.value = (parseInt(input.value) || 1) + 1;
+            update();
+        });
+
+        input.addEventListener('input', update);
+
+        update(); // при загрузке
+    });
+
+});
+
+</script>
+
+
+
+{% endblock %}

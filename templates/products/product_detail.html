@@ -4,21 +4,48 @@
 
 {% block content %}
 
+<div class="breadcrumbs">
+    <a href="{% url 'home' %}">Главная</a>
+    <span>→</span>
+    <a href="{{ product.category.get_absolute_url }}">
+        {{ product.category.name }}
+    </a>
+    <span>→</span>
+    <span class="current">{{ product.name }}</span>
+</div>
+
 <div class="product-detail">
 
-    <!-- Левая часть: изображение -->
-    <div class="product-detail-image">
-        {% with image=product.images.first %}
-          {% if image %}
-            <img src="{{ image.image.url }}">
-          {% else %}
-            Нет фото
-          {% endif %}
+    <!-- ===== Левая часть: Галерея ===== -->
+    <div class="product-gallery">
+
+        {% with first_image=product.images.first %}
+        <div class="product-main-image">
+            {% if first_image %}
+                <img id="mainImage"
+                     src="{{ first_image.image.url }}"
+                     alt="{{ product.name }}">
+            {% else %}
+                <div class="product-placeholder">Нет фото</div>
+            {% endif %}
+        </div>
         {% endwith %}
+
+        {% if product.images.count > 1 %}
+        <div class="product-thumbnails">
+            {% for image in product.images.all %}
+                <img src="{{ image.image.url }}"
+                     class="thumbnail"
+                     onclick="changeImage(this)">
+            {% endfor %}
+        </div>
+        {% endif %}
+
     </div>
 
-    <!-- Правая часть: информация -->
+    <!-- ===== Правая часть ===== -->
     <div class="product-detail-info">
+
         <h1 class="product-detail-title">{{ product.name }}</h1>
 
         <div class="product-detail-price">
@@ -31,14 +58,168 @@
         </div>
         {% endif %}
 
-        <div class="product-detail-actions">
-            <button class="btn btn-accent btn-full">
-                Добавить в корзину
-            </button>
+        {% if product.in_stock %}
+
+        <form action="{% url 'cart_add' product.id %}" method="post">
+            {% csrf_token %}
+
+            <!-- ===== Варианты ===== -->
+            <div class="product-variants">
+
+                <h3 class="variants-title">Выберите вариант:</h3>
+
+                <div class="variants-grid">
+                    {% for variant in product.variants.all %}
+                        <label class="variant-option {% if variant.stock == 0 %}variant-disabled{% endif %}">
+                            <input type="radio"
+                                   name="variant_id"
+                                   value="{{ variant.id }}"
+                                   data-stock="{{ variant.stock }}"
+                                   {% if forloop.first and variant.stock > 0 %}checked{% endif %}
+                                   {% if variant.stock == 0 %}disabled{% endif %}
+                                   required
+                            >
+
+                            <span class="variant-label">
+                                {% if variant.size %}{{ variant.size.name }}{% endif %}
+                                {% if variant.color %} — {{ variant.color.name }}{% endif %}
+                            </span>
+
+                            <small class="variant-stock">
+                                {% if variant.stock > 0 %}
+                                    {% if variant.stock <= 3 %}
+                                        Осталось {{ variant.stock }} шт.
+                                    {% else %}
+                                        {{ variant.stock }} шт.
+                                    {% endif %}
+                                {% else %}
+                                    Нет в наличии
+                                {% endif %}
+                            </small>
+                        </label>
+                    {% endfor %}
+                </div>
+
+            </div>
+
+            <!-- ===== Количество ===== -->
+            <div class="product-quantity">
+
+                <label class="qty-label">Количество:</label>
+
+                <div class="qty-wrapper">
+                    <button type="button" class="qty-btn" id="qtyMinus">−</button>
+
+                    <input type="text"
+                           id="qtyInput"
+                           name="quantity"
+                           value="1"
+                           class="qty-input"
+                           required>
+
+                    <button type="button" class="qty-btn" id="qtyPlus">+</button>
+                </div>
+
+            </div>
+
+            <!-- ===== Кнопка ===== -->
+            <div class="product-detail-actions">
+                <button type="submit" class="btn btn-accent btn-full">
+                    Добавить в корзину
+                </button>
+            </div>
+
+        </form>
+
+        {% else %}
+        <div class="out-of-stock-global">
+            Нет в наличии
         </div>
+        {% endif %}
 
     </div>
 
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+    const qtyInput = document.getElementById('qtyInput');
+    const minusBtn = document.getElementById('qtyMinus');
+    const plusBtn = document.getElementById('qtyPlus');
+    const variantInputs = document.querySelectorAll('input[name="variant_id"]');
+
+    if (!qtyInput || !minusBtn || !plusBtn) return;
+
+    let maxStock = 1;
+
+    function updateMaxStock() {
+        const selected = document.querySelector('input[name="variant_id"]:checked');
+
+        if (!selected) {
+            maxStock = 1;
+            return;
+        }
+
+        const stock = parseInt(selected.dataset.stock);
+        maxStock = isNaN(stock) ? 1 : stock;
+
+        let current = parseInt(qtyInput.value) || 1;
+
+        if (current > maxStock) {
+            qtyInput.value = maxStock;
+        }
+
+        updateButtons();
+    }
+
+    function updateButtons() {
+        let current = parseInt(qtyInput.value) || 1;
+        minusBtn.disabled = current <= 1;
+        plusBtn.disabled = current >= maxStock;
+    }
+
+    updateMaxStock();
+
+    variantInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            updateMaxStock();
+            qtyInput.value = 1;
+        });
+    });
+
+    minusBtn.addEventListener('click', function() {
+        let current = parseInt(qtyInput.value) || 1;
+        if (current > 1) {
+            qtyInput.value = current - 1;
+            updateButtons();
+        }
+    });
+
+    plusBtn.addEventListener('click', function() {
+        let current = parseInt(qtyInput.value) || 1;
+        if (current < maxStock) {
+            qtyInput.value = current + 1;
+            updateButtons();
+        }
+    });
+
+    qtyInput.addEventListener('input', function() {
+        let value = parseInt(qtyInput.value);
+
+        if (isNaN(value) || value < 1) qtyInput.value = 1;
+        if (value > maxStock) qtyInput.value = maxStock;
+
+        updateButtons();
+    });
+
+});
+</script>
+
+<script>
+function changeImage(element) {
+    document.getElementById('mainImage').src = element.src;
+}
+</script>
 
 {% endblock %}
