@@ -34,6 +34,13 @@ def cart_add(request, product_id):
         return redirect('product_detail', slug=product.slug)
 
     if variant_id:
+        try:
+            variant_id = int(variant_id)
+        except (TypeError, ValueError):
+            messages.error(request, 'Некорректный вариант товара')
+            return redirect('product_detail', slug=product.slug)
+
+    if variant_id:
         variant = get_object_or_404(
             Variant,
             id=variant_id,
@@ -88,43 +95,62 @@ def cart_add(request, product_id):
 # -----------------------
 # Cart detail
 # -----------------------
-
 def cart_detail(request):
     cart = get_cart(request)
     items = []
     total = 0
+    cart_changed = False
 
-    for key, item in cart.items():
+    for key, item in list(cart.items()):
 
         product = get_object_or_404(Product, id=item['product_id'])
         variant = None
+        stock = None
 
         if item.get('variant_id'):
             variant = get_object_or_404(Variant, id=item['variant_id'])
+
+            # 🔴 если варианта нет или stock = 0 → удаляем
+            if variant.stock <= 0:
+                cart.pop(key)
+                cart_changed = True
+                continue
+
             stock = variant.stock
-        else:
-            stock = 9999  # если простой товар без ограничений
+
+        quantity = item['quantity']
+
+        # 🔴 если quantity больше stock → уменьшаем
+        if stock is not None and quantity > stock:
+            quantity = stock
+            cart[key]['quantity'] = stock
+            cart_changed = True
+
+        price = product.price
+        subtotal = price * quantity
+        total += subtotal
 
         main_image = product.images.first()
-        price = product.price
-        subtotal = price * item['quantity']
-        total += subtotal
 
         items.append({
             'key': key,
             'display_name': item['display_name'],
-            'quantity': item['quantity'],
+            'quantity': quantity,
             'price': price,
             'subtotal': subtotal,
             'main_image': main_image.image.url if main_image else None,
-            'stock': stock,  # ← важно
+            'stock': stock if stock else 9999,
         })
+
+    if cart_changed:
+        save_cart(request, cart)
 
     return render(request, 'cart/cart_detail.html', {
         'cart_items': items,
         'total': total,
         'currency_symbol': 'сом',
     })
+
 
 
 # -----------------------

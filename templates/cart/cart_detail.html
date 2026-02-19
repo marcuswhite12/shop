@@ -110,11 +110,10 @@
 
         </div>
 
-        <div class="cart-checkout">
-            <a href="#" class="btn btn-accent">
-                Оформить заказ
-            </a>
-        </div>
+        <a href="{% url 'order_create' %}" class="btn">
+            Оформить заказ
+        </a>
+
 
         {% else %}
             <div class="cart-empty">

@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block title %}Оформление заказа - {{ block.super }}{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <h1 class="text-5xl font-bold text-center mb-16" style="color: var(--primary-color);">Оформление заказа</h1>
+
+        <form method="post" class="max-w-2xl mx-auto">
+            {% csrf_token %}
+            {{ form.as_p }}
+
+            <button type="submit" class="btn w-full text-2xl py-6">Подтвердить заказ</button>
+        </form>
+    </div>
+{% endblock %}

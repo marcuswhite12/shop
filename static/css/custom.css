@@ -1,42 +1,7 @@
 /* custom.css - Кыргызский стиль для интернет-магазина */
 /* Цвета: мягкий голубой и белый - современная интерпретация национальных мотивов */
 
-:root {
-  /* Обновлённая палитра: мягкий голубой + белый */
-  --primary-color: #4A7A9C;      /* Спокойный сине-голубой (основной) */
-  --primary-light: #6B9AB8;      /* Светло-голубой */
-  --primary-dark: #2C5F7F;       /* Темно-синий */
-  --secondary-color: #F0F8FF;    /* Очень светлый голубой (почти белый) */
-  --secondary-light: #F5FAFF;    /* Ещё светлее */
-  --secondary-dark: #D4E4F5;     /* Пастельный голубой */
-  --accent-color: #7AB3C9;       /* Средний голубой (акцент) */
 
-  /* Фон и текст */
-  --bg-color: #FFFFFF;            /* Белый фон */
-  --bg-light: #F0F5FA;           /* Светло-голубой фон */
-  --bg-secondary: #E6F0FA;       /* Вторичный фон с голубым отливом */
-  --text-color: #2D3748;          /* Тёмно-серый текст (контрастный) */
-  --text-light: #718096;          /* Светло-серый текст */
-  --text-on-primary: #FFFFFF;     /* Текст на основном фоне (белый) */
-
-  /* Границы и тени */
-  --border-color: #D0E0E8;        /* Голубовато-серая граница */
-  --border-radius: 12px;
-  --border-radius-sm: 8px;
-  --card-shadow: 0 4px 12px rgba(74, 122, 156, 0.08);  /* Тень с голубым оттенком */
-  --card-shadow-hover: 0 8px 24px rgba(74, 122, 156, 0.12);
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
-
-  /* Анимации */
-  --transition: 0.3s ease;
-  --transition-fast: 0.2s ease;
-
-  /* Размеры */
-  --logo-height: 60px;
-  --logo-max-width: 200px;
-  --header-height: 80px;
-  --max-width: 1200px;
-}
 
 /* Базовые стили */
 * {

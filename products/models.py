@@ -1,5 +1,6 @@
 from django.db import models
 from django.urls import reverse
+from django.core.exceptions import ValidationError
 
 
 class Category(models.Model):
@@ -78,6 +79,16 @@ class Variant(models.Model):
     color = models.ForeignKey(Color, on_delete=models.SET_NULL, null=True, blank=True)
     size = models.ForeignKey(Size, on_delete=models.SET_NULL, null=True, blank=True)
     stock = models.PositiveIntegerField('На складе', default=0)
+
+    def delete(self, *args, **kwargs):
+        from orders.models import OrderItem
+
+        if OrderItem.objects.filter(variant=self).exists():
+            raise ValidationError(
+                "Нельзя удалить вариант, участвующий в заказах."
+            )
+
+        super().delete(*args, **kwargs)
 
     def __str__(self):
         return f"{self.product} - {self.size} {self.color}"
