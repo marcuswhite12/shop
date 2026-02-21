@@ -3,7 +3,7 @@ from pathlib import Path
 import environ
 
 from dotenv import load_dotenv
-
+import whitenoise
 
 load_dotenv()
 
@@ -44,6 +44,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
 ]
 
 ROOT_URLCONF = 'clothes_shop.urls'
