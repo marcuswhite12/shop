@@ -3,7 +3,10 @@ crispy-tailwind==1.0.3
 Django==6.0.2
 django-crispy-forms==2.5
 django-environ==0.12.0
+gunicorn==25.1.0
+packaging==26.0
 pillow==12.1.0
+psycopg2-binary==2.9.11
 python-dotenv==1.2.1
 redis==7.1.0
 sqlparse==0.5.5
