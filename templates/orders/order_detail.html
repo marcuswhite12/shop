@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<section class="orders-section">
+  <div class="container">
+
+    <h1 class="orders-title">Заказ #{{ order.id }}</h1>
+
+    <!-- META -->
+    <div class="order-meta">
+      <p><strong>Дата:</strong> {{ order.created_at|date:"d.m.Y H:i" }}</p>
+
+      <p>
+        <strong>Статус:</strong>
+        <span class="order-status {{ order.status }}">
+          {{ order.get_status_display }}
+        </span>
+      </p>
+
+      <p><strong>Имя:</strong> {{ order.name }}</p>
+      <p><strong>Телефон:</strong> {{ order.phone }}</p>
+      <p><strong>Email:</strong> {{ order.email }}</p>
+      <p><strong>Адрес:</strong> {{ order.address }}</p>
+
+      {% if order.comment %}
+        <p><strong>Комментарий:</strong> {{ order.comment }}</p>
+      {% endif %}
+    </div>
+
+    <!-- PRODUCTS -->
+    <h2 class="mt-30">Товары</h2>
+
+    <div class="orders-table-wrapper">
+      <table class="orders-table">
+        <thead>
+          <tr>
+            <th>Товар</th>
+            <th>Количество</th>
+            <th>Цена</th>
+            <th>Сумма</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in order.items.all %}
+            <tr>
+              <td>
+                {{ item.product_name }}
+                {% if item.variant_description %}
+                  ({{ item.variant_description }})
+                {% endif %}
+              </td>
+              <td>{{ item.quantity }}</td>
+              <td>{{ item.price }} сом</td>
+              <td>{{ item.subtotal }} сом</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="3">Итого:</td>
+            <td>{{ order.total_price }} сом</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+  </div>
+</section>
+{% endblock %}

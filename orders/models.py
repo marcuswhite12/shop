@@ -3,8 +3,8 @@ from django.db.models import F
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from datetime import timedelta
-
-
+from products.models import *
+from django.apps import apps
 
 User = get_user_model()
 
@@ -65,10 +65,29 @@ class Order(models.Model):
     from django.db.models import F
 
     def mark_paid(self):
-        self._change_status(self.STATUS_PAID)
+        with transaction.atomic():
+            locked = (
+                Order.objects
+                .select_for_update()
+                .get(pk=self.pk)
+            )
+
+            locked._change_status(self.STATUS_PAID)
+
+            # синхронизация текущего объекта
+            self.status = locked.status
 
     def mark_shipped(self):
-        self._change_status(self.STATUS_SHIPPED)
+        with transaction.atomic():
+            locked = (
+                Order.objects
+                .select_for_update()
+                .get(pk=self.pk)
+            )
+
+            locked._change_status(self.STATUS_SHIPPED)
+
+            self.status = locked.status
 
     def cancel(self):
         if self.status == self.STATUS_SHIPPED:
@@ -79,17 +98,25 @@ class Order(models.Model):
 
         with transaction.atomic():
             # возврат stock
-            for item in self.items.select_related("variant"):
-                if item.variant:
-                    item.variant.stock = F("stock") + item.quantity
-                    item.variant.save(update_fields=["stock"])
+            with transaction.atomic():
+                order = Order.objects.select_for_update().get(pk=self.pk)
+
+                for item in order.items.select_related("variant"):
+                    if item.variant:
+                        type(item.variant).objects.filter(pk=item.variant.pk).update(
+                            stock=F("stock") + item.quantity
+                        )
+
+
+                order._change_status(self.STATUS_CANCELLED)
 
             self._change_status(self.STATUS_CANCELLED)
 
     def _restore_stock(self):
+        Variant = apps.get_model('products', 'Variant')
         for item in self.items.select_related("variant"):
             if item.variant:
-                "orders.Variant".objects.filter(pk=item.variant.pk).update(
+                Variant.objects.filter(pk=item.variant.pk).update(
                     stock=F("stock") + item.quantity
                 )
 
@@ -106,15 +133,27 @@ class Order(models.Model):
 
     def save(self, *args, **kwargs):
         if self.pk:
-            old = Order.objects.get(pk=self.pk)
+            old = (
+                Order.objects
+                .filter(pk=self.pk)
+                .values("status", "total_price")
+                .first()
+            )
 
-            # Если статус меняется напрямую
-            if old.status != self.status:
-                # Разрешаем изменение только если стоит служебный флаг
-                if not getattr(self, "_allow_status_change", False):
-                    raise Exception(
-                        "Нельзя менять статус напрямую. Используйте методы модели."
-                    )
+            if old:
+                old_status = old["status"]
+                old_total = old["total_price"]
+
+                # защита статуса
+                if old_status != self.status:
+                    if not getattr(self, "_allow_status_change", False):
+                        raise Exception(
+                            "Нельзя менять статус напрямую. Используйте методы модели."
+                        )
+
+                # защита total_price
+                if old_total != self.total_price:
+                    raise Exception("Нельзя менять total_price напрямую.")
 
         super().save(*args, **kwargs)
 
@@ -129,12 +168,15 @@ class Order(models.Model):
         if self.is_expired():
             self.cancel()
 
+    def delete(self, *args, **kwargs):
+        raise Exception("Удаление заказа запрещено.")
+
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
 
-    product = models.ForeignKey('products.Product', on_delete=models.SET_NULL, null=True)
-    variant = models.ForeignKey('products.Variant', on_delete=models.SET_NULL, null=True, blank=True)
+    product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True)
+    variant = models.ForeignKey(Variant, on_delete=models.SET_NULL, null=True, blank=True)
 
     product_name = models.CharField(max_length=255)
     variant_description = models.CharField(max_length=255, blank=True)

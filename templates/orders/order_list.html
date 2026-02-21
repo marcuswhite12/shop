@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="orders-section">
+  <div class="container">
+    <h1 class="orders-title">Мои заказы</h1>
+
+    {% if orders %}
+      <div class="orders-table-wrapper">
+        <table class="orders-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Дата</th>
+              <th>Статус</th>
+              <th>Сумма</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for order in orders %}
+              <tr>
+                <td data-label="ID">#{{ order.id }}</td>
+
+                <td data-label="Дата">
+                  {{ order.created_at|date:"d.m.Y H:i" }}
+                </td>
+
+                <td data-label="Статус">
+                  <span class="order-status {{ order.status }}">
+                    {{ order.get_status_display }}
+                  </span>
+                </td>
+
+                <td data-label="Сумма">
+                  {{ order.total_price }} сом
+                </td>
+
+                <td data-label="">
+                  <a href="{% url 'order_detail' order.id %}" class="nav-link">
+                    Открыть
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="orders-empty">
+        У вас пока нет заказов.
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

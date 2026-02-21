@@ -1,36 +1,40 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+from django.urls import reverse
 from datetime import timedelta
 
-from products.models import Product, Variant, Category
 from orders.models import Order, OrderItem
+from products.models import Product, Variant, Category
 
 User = get_user_model()
 
 
-class OrderModelTests(TestCase):
+class OrderProductionTestCase(TestCase):
 
     def setUp(self):
-        print("\n--- SETUP ---")
-
         self.user = User.objects.create_user(
-            username="testuser",
-            password="123456789"
+            username="user1",
+            password="password123"
+        )
+
+        self.other_user = User.objects.create_user(
+            username="user2",
+            password="password123"
         )
 
         self.category = Category.objects.create(
-            name="Test Category",
-            slug="test-category"
+            name="Category",
+            slug="category"
         )
 
         self.product = Product.objects.create(
-            name="Test Product",
-            slug="test-product",
-            description="desc",
+            name="Product",
+            slug="product",
+            description="Desc",
             price=1000,
-            category=self.category,
-            is_active=True
+            is_active=True,
+            category=self.category
         )
 
         self.variant = Variant.objects.create(
@@ -38,107 +42,175 @@ class OrderModelTests(TestCase):
             stock=10
         )
 
-    def create_order_with_item(self, quantity=2):
-        order = Order.objects.create(
+        self.order = Order.objects.create(
             user=self.user,
-            name="Test",
+            name="Name",
             phone="123",
-            email="test@test.com",
-            address="Addr",
+            email="test@mail.com",
+            address="Address",
             total_price=2000
         )
 
-        OrderItem.objects.create(
-            order=order,
+        self.item = OrderItem.objects.create(
+            order=self.order,
             product=self.product,
             variant=self.variant,
-            product_name=self.product.name,
-            variant_description="",
-            quantity=quantity,
-            price=self.product.price
+            quantity=2,
+            price=1000
         )
 
-        return order
+    # ===============================
+    # STATE MACHINE
+    # ===============================
 
-    def test_status_transition_valid(self):
-        print("Testing valid status transitions")
+    def test_valid_status_flow(self):
+        self.order.mark_paid()
+        self.assertEqual(self.order.status, Order.STATUS_PAID)
 
-        order = self.create_order_with_item()
+        self.order.mark_shipped()
+        self.assertEqual(self.order.status, Order.STATUS_SHIPPED)
 
-        order.mark_paid()
-        self.assertEqual(order.status, Order.STATUS_PAID)
-
-        order.mark_shipped()
-        self.assertEqual(order.status, Order.STATUS_SHIPPED)
-
-    def test_invalid_status_transition(self):
-        print("Testing invalid transition")
-
-        order = self.create_order_with_item()
+    def test_invalid_transition(self):
+        self.order.mark_paid()
+        self.order.mark_shipped()
 
         with self.assertRaises(Exception):
-            order.mark_shipped()  # нельзя NEW → SHIPPED
+            self.order.mark_paid()
+
+    def test_shipped_cannot_be_cancelled(self):
+        self.order.mark_paid()
+        self.order.mark_shipped()
+
+        with self.assertRaises(Exception):
+            self.order.cancel()
+
+    def test_paid_can_be_cancelled(self):
+        self.order.mark_paid()
+        self.order.cancel()
+        self.assertEqual(self.order.status, Order.STATUS_CANCELLED)
+
+    # ===============================
+    # DIRECT STATUS PROTECTION
+    # ===============================
 
     def test_direct_status_change_blocked(self):
-        print("Testing direct status change block")
-
-        order = self.create_order_with_item()
-
-        order.status = Order.STATUS_PAID
-
+        self.order.status = Order.STATUS_PAID
         with self.assertRaises(Exception):
-            order.save()
+            self.order.save()
+
+    # ===============================
+    # TOTAL PRICE PROTECTION
+    # ===============================
+
+    def test_total_price_change_blocked(self):
+        self.order.total_price = 999999
+        with self.assertRaises(Exception):
+            self.order.save()
+
+    # ===============================
+    # CANCEL LOGIC
+    # ===============================
 
     def test_cancel_returns_stock(self):
-        print("Testing cancel returns stock")
+        original_stock = self.variant.stock
 
-        order = self.create_order_with_item(quantity=3)
-
-        # уменьшаем stock вручную, как будто списали
-        self.variant.stock -= 3
-        self.variant.save()
-
-        order.cancel()
+        self.order.cancel()
         self.variant.refresh_from_db()
 
-        self.assertEqual(order.status, Order.STATUS_CANCELLED)
-        self.assertEqual(self.variant.stock, 10)
+        self.assertEqual(
+            self.variant.stock,
+            original_stock + self.item.quantity
+        )
 
-    def test_cannot_delete_order_item(self):
-        print("Testing OrderItem delete blocked")
-
-        order = self.create_order_with_item()
-        item = order.items.first()
-
-        with self.assertRaises(Exception):
-            item.delete()
-
-    def test_variant_delete_blocked_if_in_order(self):
-        print("Testing Variant delete blocked")
-
-        order = self.create_order_with_item()
+    def test_double_cancel_blocked(self):
+        self.order.cancel()
 
         with self.assertRaises(Exception):
-            self.variant.delete()
+            self.order.cancel()
 
-    def test_order_expiration(self):
-        print("Testing expiration logic")
+    def test_cancel_returns_stock_only_once(self):
+        original_stock = self.variant.stock
 
-        order = self.create_order_with_item()
+        self.order.cancel()
 
-        order.created_at = timezone.now() - timedelta(minutes=20)
-        order.save()
+        with self.assertRaises(Exception):
+            self.order.cancel()
 
-        self.assertTrue(order.is_expired())
+        self.variant.refresh_from_db()
 
-    def test_auto_cancel_if_expired(self):
-        print("Testing auto cancel")
+        self.assertEqual(
+            self.variant.stock,
+            original_stock + self.item.quantity
+        )
 
-        order = self.create_order_with_item()
+    # ===============================
+    # ORDER ITEM PROTECTION
+    # ===============================
 
-        order.created_at = timezone.now() - timedelta(minutes=20)
-        order.save()
+    def test_orderitem_edit_blocked(self):
+        self.item.quantity = 10
+        with self.assertRaises(Exception):
+            self.item.save()
 
-        order.auto_cancel_if_expired()
+    def test_orderitem_delete_blocked(self):
+        with self.assertRaises(Exception):
+            self.item.delete()
 
-        self.assertEqual(order.status, Order.STATUS_CANCELLED)
+    # ===============================
+    # DELETE PROTECTION
+    # ===============================
+
+    def test_order_delete_blocked(self):
+        with self.assertRaises(Exception):
+            self.order.delete()
+
+    # ===============================
+    # SNAPSHOT LOGIC
+    # ===============================
+
+    def test_snapshot_price_persists(self):
+        self.product.price = 9999
+        self.product.save()
+
+        self.item.refresh_from_db()
+
+        self.assertEqual(self.item.price, 1000)
+
+    # ===============================
+    # EXPIRATION
+    # ===============================
+
+    def test_is_expired_true(self):
+        self.order.created_at = timezone.now() - timedelta(hours=2)
+        self.order.save(update_fields=["created_at"])
+
+        self.assertTrue(self.order.is_expired())
+
+    def test_is_expired_false_if_paid(self):
+        self.order.mark_paid()
+        self.order.created_at = timezone.now() - timedelta(hours=2)
+        self.order.save(update_fields=["created_at"])
+
+        self.assertFalse(self.order.is_expired())
+
+    # ===============================
+    # USER ISOLATION (SECURITY)
+    # ===============================
+
+    def test_user_cannot_access_foreign_order(self):
+        self.client.login(username="user2", password="password123")
+
+        response = self.client.get(
+            reverse("order_detail", args=[self.order.id])
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_user_can_access_own_order(self):
+        self.client.login(username="user1", password="password123")
+
+        response = self.client.get(
+            reverse("order_detail", args=[self.order.id])
+        )
+
+        self.assertEqual(response.status_code, 200)

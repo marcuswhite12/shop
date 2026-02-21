@@ -8,10 +8,8 @@
     <title>{% block title %}{{ site_name }}{% endblock %}</title>
     <meta name="description" content="{{ site_description }}">
 
-    <!-- Main CSS -->
-    <link rel="stylesheet" href="{% static 'css/custom.css' %}">
     <link rel="stylesheet" href="{% static 'css/colors.css' %}">
-
+    <link rel="stylesheet" href="{% static 'css/custom.css' %}">
 </head>
 
 <body>
@@ -28,10 +26,17 @@
             <span class="brand-name">{{ site_name }}</span>
         </a>
 
+        <!-- Burger -->
+        <button class="nav-toggle" id="navToggle" aria-label="Меню">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+
         <!-- Navigation -->
-        <nav class="main-nav">
+        <nav class="main-nav" id="mainNav">
             <a href="{% url 'home' %}" class="nav-link">Главная</a>
-            <!-- cart позже -->
+
             <a href="{% url 'cart_detail' %}" class="nav-cart-link">
                 Корзина
                 <span class="cart-count">
@@ -42,18 +47,18 @@
                     {% endif %}
                 </span>
             </a>
-
         </nav>
 
     </div>
 </header>
 
+<!-- Overlay -->
+<div class="nav-overlay" id="navOverlay"></div>
+
 <!-- ================= MAIN ================= -->
 <main class="site-main">
 
-    {% block hero %}
-    <!-- Hero optional -->
-    {% endblock %}
+    {% block hero %}{% endblock %}
 
     <section class="page-section">
         <div class="container">
@@ -79,6 +84,27 @@
 
     </div>
 </footer>
+
+<!-- ================= SCRIPT ================= -->
+<script>
+const toggle = document.getElementById("navToggle");
+const nav = document.getElementById("mainNav");
+const overlay = document.getElementById("navOverlay");
+
+function closeMenu() {
+    nav.classList.remove("active");
+    overlay.classList.remove("active");
+    document.body.classList.remove("nav-open");
+}
+
+toggle.addEventListener("click", () => {
+    nav.classList.toggle("active");
+    overlay.classList.toggle("active");
+    document.body.classList.toggle("nav-open");
+});
+
+overlay.addEventListener("click", closeMenu);
+</script>
 
 </body>
 </html>

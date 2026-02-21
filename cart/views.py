@@ -1,129 +1,156 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.views.decorators.http import require_POST
+
 from products.models import Product, Variant
 
 
-# -----------------------
+# =========================
 # Helpers
-# -----------------------
+# =========================
 
 def get_cart(request):
-    return request.session.get('cart', {})
+    cart = request.session.get('cart')
+    if cart is None:
+        request.session['cart'] = {}
+        request.session.modified = True
+        return {}
+    return cart
 
 
 def save_cart(request, cart):
-    request.session['cart'] = cart
+    request.session["cart"] = cart
     request.session.modified = True
 
 
-# -----------------------
+# =========================
 # Add to cart
-# -----------------------
+# =========================
 
 @require_POST
 def cart_add(request, product_id):
     cart = get_cart(request)
 
     product = get_object_or_404(Product, id=product_id, is_active=True)
-    variant_id = request.POST.get('variant_id')
-    quantity = int(request.POST.get('quantity', 1))
 
-    if quantity <= 0:
+    variant_id = request.POST.get("variant_id")
+    try:
+        quantity = int(request.POST.get("quantity", 1))
+    except (TypeError, ValueError):
         messages.error(request, "Некорректное количество")
-        return redirect('product_detail', slug=product.slug)
+        return redirect("product_detail", slug=product.slug)
+
+    if quantity < 1:
+        messages.error(request, "Количество должно быть больше 0")
+        return redirect("product_detail", slug=product.slug)
+
+    variant = None
 
     if variant_id:
         try:
             variant_id = int(variant_id)
         except (TypeError, ValueError):
-            messages.error(request, 'Некорректный вариант товара')
-            return redirect('product_detail', slug=product.slug)
+            messages.error(request, "Некорректный вариант товара")
+            return redirect("product_detail", slug=product.slug)
 
-    if variant_id:
-        variant = get_object_or_404(
-            Variant,
+        variant = Variant.objects.filter(
             id=variant_id,
-            product_id=product_id
-        )
+            product_id=product.id
+        ).first()
+
+        if not variant:
+            messages.error(request, "Вариант товара не найден")
+            return redirect("product_detail", slug=product.slug)
 
         if variant.stock < quantity:
             messages.error(
                 request,
-                f'Недостаточно на складе: только {variant.stock} шт.'
+                f"Недостаточно на складе: только {variant.stock} шт."
             )
-            return redirect('product_detail', slug=product.slug)
+            return redirect("product_detail", slug=product.slug)
 
-        key = f'variant_{variant.id}'
-        display_name = f"{product.name} ({variant.size or ''} {variant.color or ''})".strip()
+        key = f"variant_{variant.id}"
 
     else:
+        # если у товара есть варианты — без варианта нельзя
         if product.variants.exists():
             messages.error(request, "Выберите вариант товара")
-            return redirect('product_detail', slug=product.slug)
+            return redirect("product_detail", slug=product.slug)
 
-        key = f'product_{product.id}'
-        display_name = product.name
+        key = f"product_{product.id}"
 
-    # Добавление / увеличение
+    # увеличение количества
     if key in cart:
-        new_quantity = cart[key]['quantity'] + quantity
+        new_quantity = cart[key]["quantity"] + quantity
 
-        if variant_id:
-            if variant.stock < new_quantity:
-                messages.error(
-                    request,
-                    f'Недостаточно на складе: только {variant.stock} шт.'
-                )
-                return redirect('product_detail', slug=product.slug)
+        if variant and variant.stock < new_quantity:
+            messages.error(
+                request,
+                f"Недостаточно на складе: только {variant.stock} шт."
+            )
+            return redirect("product_detail", slug=product.slug)
 
-        cart[key]['quantity'] = new_quantity
+        cart[key]["quantity"] = new_quantity
     else:
         cart[key] = {
-            'quantity': quantity,
-            'product_id': product.id,
-            'variant_id': variant_id,
-            'display_name': display_name,
+            "product_id": product.id,
+            "variant_id": variant.id if variant else None,
+            "quantity": quantity,
         }
 
     save_cart(request, cart)
     messages.success(request, "Товар добавлен в корзину")
-    return redirect('product_detail', slug=product.slug)
+
+    return redirect("product_detail", slug=product.slug)
 
 
+# =========================
+# Cart detail (production-safe)
+# =========================
 
-# -----------------------
-# Cart detail
-# -----------------------
 def cart_detail(request):
     cart = get_cart(request)
+
     items = []
     total = 0
     cart_changed = False
 
     for key, item in list(cart.items()):
 
-        product = get_object_or_404(Product, id=item['product_id'])
+        product = Product.objects.filter(
+            id=item.get("product_id"),
+            is_active=True
+        ).first()
+
+        if not product:
+            cart.pop(key)
+            cart_changed = True
+            continue
+
         variant = None
         stock = None
 
-        if item.get('variant_id'):
-            variant = get_object_or_404(Variant, id=item['variant_id'])
+        variant_id = item.get("variant_id")
 
-            # 🔴 если варианта нет или stock = 0 → удаляем
-            if variant.stock <= 0:
+        if variant_id:
+            variant = Variant.objects.filter(
+                id=variant_id,
+                product_id=product.id
+            ).first()
+
+            if not variant or variant.stock <= 0:
                 cart.pop(key)
                 cart_changed = True
                 continue
 
             stock = variant.stock
 
-        quantity = item['quantity']
+        quantity = int(item.get("quantity", 1))
 
-        # 🔴 если quantity больше stock → уменьшаем
+        # если quantity > stock → обрезаем
         if stock is not None and quantity > stock:
             quantity = stock
-            cart[key]['quantity'] = stock
+            cart[key]["quantity"] = stock
             cart_changed = True
 
         price = product.price
@@ -132,90 +159,105 @@ def cart_detail(request):
 
         main_image = product.images.first()
 
+        # display_name формируем заново (не доверяем session)
+        if variant:
+            display_name = f"{product.name} ({variant.size or ''} {variant.color or ''})".strip()
+        else:
+            display_name = product.name
+
         items.append({
-            'key': key,
-            'display_name': item['display_name'],
-            'quantity': quantity,
-            'price': price,
-            'subtotal': subtotal,
-            'main_image': main_image.image.url if main_image else None,
-            'stock': stock if stock else 9999,
+            "key": key,
+            "display_name": display_name,
+            "quantity": quantity,
+            "price": price,
+            "subtotal": subtotal,
+            "main_image": main_image.image.url if main_image else None,
+            "stock": stock if stock is not None else 9999,
         })
 
     if cart_changed:
         save_cart(request, cart)
 
-    return render(request, 'cart/cart_detail.html', {
-        'cart_items': items,
-        'total': total,
-        'currency_symbol': 'сом',
+    return render(request, "cart/cart_detail.html", {
+        "cart_items": items,
+        "total": total,
+        "currency_symbol": "сом",
     })
 
 
-
-# -----------------------
+# =========================
 # Update quantity
-# -----------------------
+# =========================
+
 @require_POST
 def cart_update(request):
     cart = get_cart(request)
-    key = request.POST.get('key')
+    key = request.POST.get("key")
 
     if not key or key not in cart:
-        messages.error(request, "Товар не найден в корзине")
-        return redirect('cart_detail')
+        return redirect("cart_detail")
 
     try:
-        quantity = int(request.POST.get('quantity', 1))
+        quantity = int(request.POST.get("quantity", 1))
     except (TypeError, ValueError):
-        messages.error(request, "Некорректное количество")
-        return redirect('cart_detail')
+        return redirect("cart_detail")
 
     if quantity < 1:
         cart.pop(key, None)
         save_cart(request, cart)
-        return redirect('cart_detail')
+        return redirect("cart_detail")
 
     item = cart[key]
 
-    # Проверка stock
-    if item.get('variant_id'):
-        variant = get_object_or_404(Variant, id=item['variant_id'])
+    product = Product.objects.filter(
+        id=item.get("product_id"),
+        is_active=True
+    ).first()
+
+    if not product:
+        cart.pop(key)
+        save_cart(request, cart)
+        return redirect("cart_detail")
+
+    variant_id = item.get("variant_id")
+
+    if variant_id:
+        variant = Variant.objects.filter(
+            id=variant_id,
+            product_id=product.id
+        ).first()
+
+        if not variant or variant.stock <= 0:
+            cart.pop(key)
+            save_cart(request, cart)
+            return redirect("cart_detail")
 
         if quantity > variant.stock:
-            messages.error(
-                request,
-                f'Можно добавить максимум {variant.stock} шт.'
-            )
-            return redirect('cart_detail')
+            quantity = variant.stock
 
-    cart[key]['quantity'] = quantity
+    cart[key]["quantity"] = quantity
     save_cart(request, cart)
 
-    messages.success(request, "Количество обновлено")
-    return redirect('cart_detail')
+    return redirect("cart_detail")
 
 
-
-# -----------------------
-# Remove item
-# -----------------------
+# =========================
+# Remove
+# =========================
 
 @require_POST
 def cart_remove(request):
     cart = get_cart(request)
-    key = request.POST.get('key')
+    key = request.POST.get("key")
 
-    if key and key in cart:
-        cart.pop(key, None)
+    if key in cart:
+        cart.pop(key)
         save_cart(request, cart)
-        messages.success(request, "Товар удалён из корзины")
 
-    return redirect('cart_detail')
+    return redirect("cart_detail")
+
 
 @require_POST
 def cart_clear(request):
-    request.session['cart'] = {}
-    request.session.modified = True
-    messages.success(request, "Корзина очищена")
-    return redirect('cart_detail')
+    save_cart(request, {})
+    return redirect("cart_detail")

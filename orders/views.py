@@ -10,9 +10,9 @@ from .models import Order, OrderItem
 from .forms import OrderCreateForm
 from django.contrib.auth.decorators import login_required
 
-
-for order in Order.objects.filter(status=Order.STATUS_NEW):
-    order.auto_cancel_if_expired()
+# авто отмена просроченных товаров
+# for order in Order.objects.filter(status=Order.STATUS_NEW):
+#     order.auto_cancel_if_expired()
 
 
 @login_required
@@ -148,3 +148,29 @@ def order_create(request):
 def order_success(request, order_id):
     order = get_object_or_404(Order, id=order_id, user=request.user)
     return render(request, 'orders/order_success.html', {'order': order})
+
+
+@login_required
+def order_list(request):
+    orders = (
+        Order.objects
+        .filter(user=request.user)
+        .order_by("-created_at")
+    )
+
+    return render(request, "orders/order_list.html", {
+        "orders": orders
+    })
+
+
+@login_required
+def order_detail(request, order_id):
+    order = get_object_or_404(
+        Order.objects.prefetch_related("items__variant", "items__product"),
+        id=order_id,
+        user=request.user
+    )
+
+    return render(request, "orders/order_detail.html", {
+        "order": order
+    })
