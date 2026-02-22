@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Профиль{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="auth-title">Профиль</h1>
+
+    <div class="profile-card">
+
+        <div class="profile-data">
+            <p><strong>Email:</strong> {{ request.user.email }}</p>
+            <p><strong>ФИО:</strong> {{ request.user.full_name }}</p>
+            <p><strong>Телефон:</strong> {{ request.user.phone }}</p>
+        </div>
+
+        <div class="profile-actions">
+            <a href="{% url 'profile_edit' %}" class="btn btn-outline">Редактировать данные</a>
+            <a href="{% url 'cart_detail' %}" class="btn btn-outline">Корзина</a>
+            <a href="{% url 'order_list' %}" class="btn btn-outline">Мои заказы</a>
+
+            <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="cart-clear-btn">Выйти</button>
+            </form>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

@@ -70,7 +70,9 @@
                                     <button type="button" class="cart-qty-btn plus">+</button>
                                 </div>
 
-                                <button type="submit" class="btn btn-small">OK</button>
+                                <button type="submit" class="btn btn-outline btn-sm">
+                                    OK
+                                </button>
                             </form>
                         </td>
 
@@ -109,11 +111,11 @@
             </table>
 
         </div>
-
-        <a href="{% url 'order_create' %}" class="btn">
-            Оформить заказ
-        </a>
-
+        <div class="product-detail-actions">
+           <a href="{% url 'order_create' %}" class="btn btn-primary">
+                Оформить заказ
+            </a>
+        </div>
 
         {% else %}
             <div class="cart-empty">

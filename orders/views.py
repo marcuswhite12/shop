@@ -21,8 +21,6 @@ def order_create(request):
 
     if not cart:
         messages.error(request, 'Корзина пуста')
-        print("REDIRECT REASON: ...")
-
         return redirect('cart_detail')
 
     if request.method == 'POST':
@@ -49,15 +47,12 @@ def order_create(request):
                 total = 0
                 order_items_data = []
 
-                print("CART CONTENT:", cart)
-
                 for key, item in cart.items():
 
                     quantity = int(item['quantity'])
 
                     if quantity <= 0 or quantity > 100:
                         messages.error(request, 'Некорректное количество')
-                        print("REDIRECT REASON: ...")
                         return redirect('cart_detail')
 
                     if item.get('variant_id'):
@@ -65,7 +60,6 @@ def order_create(request):
 
                         if not variant:
                             messages.error(request, 'Товар больше недоступен')
-                            print("REDIRECT REASON: ...")
                             return redirect('cart_detail')
 
                         if variant.stock < quantity:
@@ -73,7 +67,6 @@ def order_create(request):
                                 request,
                                 f'Недостаточно "{variant.product.name}" на складе'
                             )
-                            print("REDIRECT REASON: ...")
                             return redirect('cart_detail')
 
                         price = variant.product.price
@@ -115,10 +108,6 @@ def order_create(request):
                         'price': price,
                     })
 
-                print("ITEM:", item)
-                print("QUANTITY:", quantity)
-                print("VARIANT ID:", item.get('variant_id'))
-
                 # создаём заказ
                 order = form.save(commit=False)
                 order.user = request.user
@@ -133,8 +122,6 @@ def order_create(request):
 
                 # очищаем корзину
                 save_cart(request, {})
-
-                print("REDIRECT REASON: ...")
 
                 return redirect('order_success', order_id=order.id)
 

@@ -73,7 +73,7 @@ def cart_add(request, product_id):
 
     else:
         # если у товара есть варианты — без варианта нельзя
-        if product.variants.exists():
+        if product.variants.count() > 0:
             messages.error(request, "Выберите вариант товара")
             return redirect("product_detail", slug=product.slug)
 
@@ -115,12 +115,36 @@ def cart_detail(request):
     total = 0
     cart_changed = False
 
-    for key, item in list(cart.items()):
+    if not cart:
+        return render(request, "cart/cart_detail.html", {
+            "cart_items": [],
+            "total": 0,
+            "currency_symbol": "сом",
+        })
 
-        product = Product.objects.filter(
-            id=item.get("product_id"),
-            is_active=True
-        ).first()
+    product_ids = {item["product_id"] for item in cart.values()}
+    variant_ids = {
+        item["variant_id"]
+        for item in cart.values()
+        if item.get("variant_id")
+    }
+
+    products = {
+        p.id: p
+        for p in Product.objects
+        .filter(id__in=product_ids, is_active=True)
+        .prefetch_related("images")
+    }
+
+    variants = {
+        v.id: v
+        for v in Variant.objects
+        .filter(id__in=variant_ids)
+        .select_related("product")
+    }
+
+    for key, item in list(cart.items()):
+        product = products.get(item["product_id"])
 
         if not product:
             cart.pop(key)
@@ -133,10 +157,7 @@ def cart_detail(request):
         variant_id = item.get("variant_id")
 
         if variant_id:
-            variant = Variant.objects.filter(
-                id=variant_id,
-                product_id=product.id
-            ).first()
+            variant = variants.get(variant_id)
 
             if not variant or variant.stock <= 0:
                 cart.pop(key)
@@ -147,7 +168,6 @@ def cart_detail(request):
 
         quantity = int(item.get("quantity", 1))
 
-        # если quantity > stock → обрезаем
         if stock is not None and quantity > stock:
             quantity = stock
             cart[key]["quantity"] = stock
@@ -159,7 +179,6 @@ def cart_detail(request):
 
         main_image = product.images.first()
 
-        # display_name формируем заново (не доверяем session)
         if variant:
             display_name = f"{product.name} ({variant.size or ''} {variant.color or ''})".strip()
         else:

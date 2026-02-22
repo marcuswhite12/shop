@@ -199,3 +199,102 @@ class CartTestCase(TestCase):
 
         cart = self.client.session.get("cart")
         self.assertEqual(cart, {})
+
+    def test_inactive_product_removed_on_detail(self):
+        self.client.post(
+            reverse("cart_add", args=[self.product.id]),
+            {"variant_id": self.variant.id, "quantity": 2}
+        )
+
+        self.product.is_active = False
+        self.product.save()
+
+        self.client.get(reverse("cart_detail"))
+
+        cart = self.client.session.get("cart")
+        self.assertEqual(cart, {})
+
+    def test_deleted_variant_removed_on_detail(self):
+        self.client.post(
+            reverse("cart_add", args=[self.product.id]),
+            {"variant_id": self.variant.id, "quantity": 2}
+        )
+
+        self.variant.delete()
+
+        self.client.get(reverse("cart_detail"))
+
+        cart = self.client.session.get("cart")
+        self.assertEqual(cart, {})
+
+    def test_total_calculation(self):
+        self.client.post(
+            reverse("cart_add", args=[self.product.id]),
+            {"variant_id": self.variant.id, "quantity": 2}
+        )
+
+        response = self.client.get(reverse("cart_detail"))
+        self.assertContains(response, "2000")
+
+    def test_cart_detail_empty_session(self):
+        response = self.client.get(reverse("cart_detail"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "0")
+
+    def test_broken_session_data_cleaned(self):
+        session = self.client.session
+        session["cart"] = {
+            "variant_999": {
+                "product_id": 999,
+                "variant_id": 999,
+                "quantity": 5
+            }
+        }
+        session.save()
+
+        self.client.get(reverse("cart_detail"))
+
+        cart = self.client.session.get("cart")
+        self.assertEqual(cart, {})
+
+    def test_trim_after_stock_change(self):
+        self.client.post(
+            reverse("cart_add", args=[self.product.id]),
+            {"variant_id": self.variant.id, "quantity": 4}
+        )
+
+        self.variant.stock = 2
+        self.variant.save()
+
+        self.client.get(reverse("cart_detail"))
+
+        cart = self.client.session.get("cart")
+        key = f"variant_{self.variant.id}"
+        self.assertEqual(cart[key]["quantity"], 2)
+
+    def test_update_to_zero_removes(self):
+        self.client.post(
+            reverse("cart_add", args=[self.product.id]),
+            {"variant_id": self.variant.id, "quantity": 2}
+        )
+
+        self.client.post(
+            reverse("cart_update"),
+            {"key": f"variant_{self.variant.id}", "quantity": 0}
+        )
+
+        cart = self.client.session.get("cart")
+        self.assertEqual(cart, {})
+
+    def test_cart_detail_query_count(self):
+        self.client.post(
+            reverse("cart_add", args=[self.product.id]),
+            {"variant_id": self.variant.id, "quantity": 1}
+        )
+
+        with self.assertNumQueries(4):
+            # 1 products
+            # 1 variants
+            # 1 images
+            # 1 session
+            self.client.get(reverse("cart_detail"))

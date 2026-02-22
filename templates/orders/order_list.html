@@ -10,7 +10,7 @@
         <table class="orders-table">
           <thead>
             <tr>
-              <th>ID</th>
+              <th>№</th>
               <th>Дата</th>
               <th>Статус</th>
               <th>Сумма</th>
@@ -20,7 +20,7 @@
           <tbody>
             {% for order in orders %}
               <tr>
-                <td data-label="ID">#{{ order.id }}</td>
+                <td data-label="ID">№{{ order.id }}</td>
 
                 <td data-label="Дата">
                   {{ order.created_at|date:"d.m.Y H:i" }}

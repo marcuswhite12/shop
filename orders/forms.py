@@ -10,6 +10,13 @@ class OrderCreateForm(forms.ModelForm):
             'address': forms.Textarea(attrs={'rows': 4}),
             'comment': forms.Textarea(attrs={'rows': 3}),
         }
+        labels = {
+            'name': 'ФИО',
+            'phone': 'Телефон',
+            'email': 'Email',
+            'address': 'Адрес доставки',
+            'comment': 'Комментарий к заказу',
+        }
 
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)

@@ -5,6 +5,7 @@ from django.utils import timezone
 from datetime import timedelta
 from products.models import *
 from django.apps import apps
+from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
@@ -52,6 +53,7 @@ class Order(models.Model):
         indexes = [
             models.Index(fields=['created_at']),
             models.Index(fields=['status']),
+            models.Index(fields=['user', 'created_at']),
         ]
 
     def __str__(self):
@@ -90,27 +92,29 @@ class Order(models.Model):
             self.status = locked.status
 
     def cancel(self):
-        if self.status == self.STATUS_SHIPPED:
-            raise Exception("Нельзя отменить уже отправленный заказ")
-
-        if self.status == self.STATUS_CANCELLED:
-            raise Exception("Заказ уже отменён")
-
         with transaction.atomic():
-            # возврат stock
-            with transaction.atomic():
-                order = Order.objects.select_for_update().get(pk=self.pk)
+            locked = (
+                Order.objects
+                .select_for_update()
+                .get(pk=self.pk)
+            )
 
-                for item in order.items.select_related("variant"):
-                    if item.variant:
-                        type(item.variant).objects.filter(pk=item.variant.pk).update(
-                            stock=F("stock") + item.quantity
-                        )
+            if locked.status == self.STATUS_SHIPPED:
+                raise Exception("Нельзя отменить уже отправленный заказ")
 
+            if locked.status == self.STATUS_CANCELLED:
+                raise Exception("Заказ уже отменён")
 
-                order._change_status(self.STATUS_CANCELLED)
+            for item in locked.items.select_related("variant"):
+                if item.variant:
+                    type(item.variant).objects.filter(pk=item.variant.pk).update(
+                        stock=F("stock") + item.quantity
+                    )
 
-            self._change_status(self.STATUS_CANCELLED)
+            locked._change_status(self.STATUS_CANCELLED)
+
+            # синхронизируем текущий объект
+            self.status = locked.status
 
     def _restore_stock(self):
         Variant = apps.get_model('products', 'Variant')

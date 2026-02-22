@@ -111,3 +111,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 SESSION_COOKIE_AGE = 1209600  # 2 недели для корзины
+AUTH_USER_MODEL = "users.User"
+
+LOGIN_REDIRECT_URL = "home"
+LOGOUT_REDIRECT_URL = "home"

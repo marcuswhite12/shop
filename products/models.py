@@ -38,6 +38,11 @@ class Product(models.Model):
     class Meta:
         verbose_name = 'Товар'
         verbose_name_plural = 'Товары'
+        indexes = [
+            models.Index(fields=["slug"]),
+            models.Index(fields=["category", "is_active"]),
+            models.Index(fields=["is_active", "created_at"]),
+        ]
 
     def __str__(self):
         return self.name
@@ -79,6 +84,14 @@ class Variant(models.Model):
     color = models.ForeignKey(Color, on_delete=models.SET_NULL, null=True, blank=True)
     size = models.ForeignKey(Size, on_delete=models.SET_NULL, null=True, blank=True)
     stock = models.PositiveIntegerField('На складе', default=0)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["product", "color", "size"],
+                name="unique_product_variant"
+            )
+        ]
 
     def delete(self, *args, **kwargs):
         from orders.models import OrderItem

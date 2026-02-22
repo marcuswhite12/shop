@@ -7,6 +7,6 @@
         <h1 class="text-5xl font-bold mb-8" style="color: var(--primary-color);">Заказ №{{ order.id }} создан!</h1>
         <p class="text-2xl mb-8">Сумма: {{ order.total_price }} сом</p>
         <p class="text-xl">Мы свяжемся с вами скоро.</p>
-        <a href="{% url 'home' %}" class="btn mt-12">На главную</a>
+        <a href="{% url 'home' %}" class="btn btn-primary">На главную</a>
     </div>
 {% endblock %}
