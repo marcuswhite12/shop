@@ -182,3 +182,220 @@
   }
 
 }
+
+/* ===== MOBILE NAV ===== */
+
+@media (max-width: 768px) {
+
+  .main-nav {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 75%;
+    height: 100vh;
+    background: var(--bg-light);
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 2rem;
+    transition: right 0.3s ease;
+    z-index: 300;
+  }
+
+  .main-nav.active {
+    right: 0;
+  }
+
+  .mobile-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    opacity: 0;
+    visibility: hidden;
+    transition: 0.3s ease;
+    z-index: 200;
+  }
+
+  .mobile-overlay.active {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .burger {
+    width: 30px;
+    height: 22px;
+    position: relative;
+    cursor: pointer;
+    z-index: 400;
+  }
+
+  .burger::before,
+  .burger::after,
+  .burger span {
+    content: "";
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: var(--text-color);
+    transition: 0.3s ease;
+  }
+
+  .burger::before { top: 0; }
+  .burger span { top: 9px; }
+  .burger::after { bottom: 0; }
+
+}
+
+
+
+/* ===== МОБИЛЬНОЕ МЕНЮ (ПРОЗРАЧНОЕ, СМЕЩЕНО ВВЕРХ) ===== */
+@media (max-width: 768px) {
+
+  .main-nav {
+    display: none;
+  }
+
+  /* БУРГЕР */
+  .burger {
+    background: none;
+    border: none;
+    cursor: pointer;
+    z-index: 1001;
+    padding: 8px;
+  }
+
+  /* ТЕМНЫЙ ФОН (ТОЛЬКО СЛЕВА) */
+  .mobile-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+
+    background: rgba(0,0,0,0.45);
+    backdrop-filter: blur(4px);
+
+    opacity: 0;
+    visibility: hidden;
+    transition: 0.3s ease;
+
+    z-index: 999;
+  }
+
+  .mobile-overlay.active {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  /* ПРАВАЯ ПАНЕЛЬ */
+  .mobile-nav {
+    position: fixed;
+    top: 0;
+    width: 140px;
+    right: -240px; /* узкая панель */
+    height: 100vh;
+
+    background: transparent;
+
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    padding-top: 90px;
+    padding-right: 24px;
+    gap: 28px;
+
+    transition: right 0.3s ease;
+    z-index: 1000;
+  }
+
+  .mobile-nav.active {
+    right: 0;
+  }
+
+  /* КНОПКИ */
+  .mobile-nav a {
+    font-size: 1.1rem;
+    font-weight: 600;
+    text-decoration: none;
+    color: white;
+
+    padding: 10px 20px;
+    border-radius: 30px;
+
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(6px);
+
+    transition: 0.2s ease;
+  }
+
+  .mobile-nav a:hover {
+    transform: translateX(-5px);
+    background: rgba(0,0,0,0.75);
+  }
+.burger {
+  position: relative;
+  width: 25px;
+  height: 24px;
+
+  border: none;
+  background: transparent;
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  transition: transform 0.2s ease;
+}
+
+/* центральная линия */
+.burger span,
+.burger::before,
+.burger::after {
+  content: "";
+  position: absolute;
+
+  width: 100%;
+  height: 2px;
+  border-radius: 2px;
+
+  background: var(--text-color);
+
+  transition: all 0.3s cubic-bezier(.4,0,.2,1);
+}
+
+/* верх */
+.burger::before {
+  transform: translateY(1px);
+}
+
+/* низ */
+.burger::after {
+  transform: translateY(-5px);
+}
+
+/* hover — лёгкое выделение */
+.burger:hover span,
+.burger:hover::before,
+.burger:hover::after {
+  background: var(--primary-color);
+}
+
+/* при нажатии — микро эффект */
+.burger:active {
+  transform: scale(0.95);
+}
+.burger.active span {
+  background: transparent;
+}
+
+.burger.active::before {
+  transform: rotate(45deg);
+}
+
+.burger.active::after {
+  transform: rotate(-45deg);
+}
+}
+

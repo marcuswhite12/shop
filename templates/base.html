@@ -34,11 +34,18 @@
         </a>
 
         <!-- Гамбургер -->
-        <button class="burger" id="burgerBtn">
-            <span></span>
-            <span></span>
-            <span></span>
+        <button class="burger">
+          <span></span>
         </button>
+
+        <nav class="mobile-nav">
+            <a href="/">Главная</a>
+            <a href="/catalog/">Каталог</a>
+            <a href="/cart/">Корзина</a>
+            <a href="/account/profile/">Профиль</a>
+        </nav>
+
+        <div class="mobile-overlay"></div>
 
         <!-- Навигация -->
         <nav class="main-nav">
@@ -56,6 +63,8 @@
             {% endif %}
 
         </nav>
+
+
     </div>
 </header>
 
@@ -116,12 +125,29 @@ overlay.addEventListener("click", closeMenu);
 <script>
 document.addEventListener("DOMContentLoaded", function () {
 
-    const burger = document.getElementById("burgerBtn");
-    const nav = document.getElementById("mainNav");
+  const burger = document.querySelector(".burger");
+  const nav = document.querySelector(".mobile-nav");
+  const overlay = document.querySelector(".mobile-overlay");
 
-    burger.addEventListener("click", function () {
-        nav.classList.toggle("active");
-    });
+  function openMenu() {
+    nav.classList.add("active");
+    overlay.classList.add("active");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeMenu() {
+    nav.classList.remove("active");
+    overlay.classList.remove("active");
+    document.body.style.overflow = "";
+  }
+
+  burger.addEventListener("click", function () {
+  nav.classList.toggle("active");
+  overlay.classList.toggle("active");
+  burger.classList.toggle("active");
+});
+
+  overlay.addEventListener("click", closeMenu);
 
 });
 </script>
